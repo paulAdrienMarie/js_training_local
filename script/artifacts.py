@@ -1,11 +1,14 @@
 import platform
 import onnx
 from onnxruntime.training import artifacts
+import os
 
-assert platform.python_version_tuple() == ("3", "9", "6")
+assert list(platform.python_version_tuple())[:-1] == ["3", "9"]
 
 # Load the ONNX model
-onnx_model = onnx.load("./public/inference_artifacts/initial_model.onnx")
+ARTIFACTS_DIR = os.path.join(os.path.dirname(__file__), "..", "artifacts")
+
+onnx_model = onnx.load(os.path.join(ARTIFACTS_DIR, "model.onnx"))
 
 # Check if the model has been loaded successfully
 try:
@@ -22,13 +25,11 @@ frozen_params = [
     if param.name not in requires_grad
 ]
 
-path_to_output_artifacts = "./public/training_artifacts"
-
 artifacts.generate_artifacts(
     onnx_model,
     optimizer=artifacts.OptimType.AdamW,
     loss=artifacts.LossType.L1Loss,
-    artifact_directory=path_to_output_artifacts,
+    artifact_directory=ARTIFACTS_DIR,
     requires_grad=requires_grad,
     frozen_params=frozen_params,
 )

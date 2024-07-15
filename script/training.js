@@ -1,13 +1,11 @@
-import ortWasmThreaded from "/dist/ort-training-wasm-simd-threaded.mjs";
-
-const ort = await ortWasmThreaded();
+import * as ort from "/dist/ort.training.wasm.min.js";
 
 console.log(ort);
 // ort.env.wasm.trace = true;
 //
 // console.log(ort);//
 // ort.env.wasm.numThreads = 4;
-//ort.env.wasm.wasmPaths  = "/";
+ort.env.wasm.wasmPaths = "/dist/";
 
 //import { InferenceSession } from "onnxruntime-web";
 //import ortWasmThreaded from "../public/ort-training-wasm-simd-threaded.mjs";
@@ -20,7 +18,7 @@ async function loadInferenceSession() {
 
   try {
     const session = new InferenceSession(
-      "./inference_artifacts/initial_model.onnx"
+      "./inference_artifacts/initial_model.onnx",
     );
     console.log("Inference session loaded");
   } catch (err) {
@@ -32,10 +30,10 @@ async function loadInferenceSession() {
 async function loadTrainingSession() {
   console.log("Trying to load Training Session");
 
-  const train = "/training_artifacts/training_model.onnx";
-  const eval_ = "/training_artifacts/eval_model.onnx";
-  const optimizer = "/training_artifacts/optimizer_model.onnx";
-  const checkpoint = "/training_artifacts/checkpoint";
+  const train = "/artifacts/training_model.onnx";
+  const eval_ = "/artifacts/eval_model.onnx";
+  const optimizer = "/artifacts/optimizer_model.onnx";
+  const checkpoint = "/artifacts/checkpoint";
 
   try {
     const createOptions = {
@@ -44,7 +42,7 @@ async function loadTrainingSession() {
       evalModel: eval_,
       optimizerModel: optimizer,
     };
-    const session = await ort._OrtCreateSession(createOptions);
+    const session = await ort.TrainingSession.create(createOptions);
     console.log("Training session loaded");
     console.log(session);
     return session;
