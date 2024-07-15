@@ -1,17 +1,6 @@
 import * as ort from "/dist/ort.training.wasm.min.js";
 
-console.log(ort);
-// ort.env.wasm.trace = true;
-//
-// console.log(ort);//
-// ort.env.wasm.numThreads = 4;
 ort.env.wasm.wasmPaths = "/dist/";
-
-//import { InferenceSession } from "onnxruntime-web";
-//import ortWasmThreaded from "../public/ort-training-wasm-simd-threaded.mjs";
-
-//ort.env.wasm.wasmPaths["ort-training-wasm-simd.wasm"] = "../public/ort-training-wasm-simd.wasm";
-//ort.env.wasm.wasmPaths["ort-wasm-simd.wasm."] = "../public/ort.training.wasm";
 
 async function loadInferenceSession() {
   console.log("Trying to load inference session");
