@@ -1,6 +1,6 @@
 import * as ort from "/dist/ort.training.wasm.min.js";
 
-async function loadConfig(url) {
+async function loadJSON(url) {
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -13,13 +13,14 @@ async function loadConfig(url) {
   }
 }
 
-function loadInferenceSession() {
-  let MODEL_PATH = "model/inference.onnx";
+async function loadInferenceSession() {
+  let MODEL_PATH = "/model/inference.onnx";
   console.log("Loading Inference Session");
 
   try {
-    const session = new ort.InferenceSession(MODEL_PATH);
+    const session = await ort.InferenceSession.create(MODEL_PATH);
     console.log("Inference Session successfully loaded");
+    return session;
   } catch (err) {
     console.log("Error loading the Inference Session:", err);
     throw err;
@@ -28,7 +29,7 @@ function loadInferenceSession() {
 
 export async function preprocessImage(base64Data) {
   // Load configuration asynchronously
-  const pre = await loadConfig("script/preprocessor_config.json");
+  const pre = await loadJSON("script/preprocessor_config.json");
 
   // Extract necessary parameters from the configuration
   const input_size = pre.size.width; // Assuming width and height are the same for resizing
@@ -96,9 +97,56 @@ export async function preprocessImage(base64Data) {
   return inputTensor;
 }
 
-export async function predict(base64Data) {
-  const session = loadInferenceSession();
-  const image = await preprocessImage(base64Data);
+function softmax(arr) {
+    return arr.map(function(value,index) { 
+      return Math.exp(value) / arr.map( function(y /*value*/){ return Math.exp(y) } ).reduce( function(a,b){ return a+b })
+    })
+}
 
-  return image;
+function argsort(array) {
+    // Convert Float32Array to a regular array with indices
+    const arrayWithIndices = Array.from(array).map((value, index) => ({ value, index }));
+  
+    // Sort by value in descending order and map to indices
+    arrayWithIndices.sort((a, b) => b.value - a.value);
+  
+    // Extract sorted indices
+    return arrayWithIndices.map(item => item.index);
+  }
+
+export async function predict(base64Data) {
+
+  // Load the Inference Session
+  let session = await loadInferenceSession();
+
+  // Preprocess the input_image
+  let image = await preprocessImage(base64Data);
+
+  // Prepare the input of the session
+  let feeds = {
+    pixel_values: image,
+  };
+
+  // Run the session
+  let results = await session.run(feeds);
+
+  // Retrieve the logits of the outputs
+  let logits = results["logits"];
+
+  // Transform the logits into a probability distribution
+  let probs = softmax(logits.cpuData);
+  
+  // Sort the probs in descending order
+  let sorted_indices = argsort(probs);
+  console.log(sorted_indices);
+
+  const config = await loadJSON('script/config.json');
+  const id2label = config.id2label;
+
+  let labels = {};
+  sorted_indices.slice(0,5).forEach((i,x) => {
+    labels[id2label[i.toString()]] = probs[i];
+  });
+  
+  return labels;
 }

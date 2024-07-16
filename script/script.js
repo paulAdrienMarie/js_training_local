@@ -32,29 +32,14 @@ fileUpload.addEventListener("change", function (e) {
 // make a request to the python server to generate a caption of the given image
 async function detect(image) {
   
-  const img = await predict(image.src);
+  const labels = await predict(image.src);
 
-  console.log(img);
-  
-  //fetch("/predict", {
-  //  method: "POST",
-  //  headers: {
-  //    "Content-Type": "application/json",
-  //  },
-  //  body: JSON.stringify({ input_image: image.src }),
-  //})
-  //  .then((response) => response.json())
-  //  .then((data) => {
-  //    displayOutput(data);
-  //  })
-  //  .catch((error) => {
-  //    document.getElementById("result").textContent = "Error: " + error;
-  //  });
+  displayOutput(labels);
 }
 
 function displayOutput(data) {
   console.log(data);
-  const labels = data.object_labels;
+  const labels = data;
 
   const generated_text = document.createElement("div");
   generated_text.id = "textarea-id";
