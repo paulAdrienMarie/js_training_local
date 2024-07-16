@@ -133,26 +133,28 @@ function add_Event(id) {
   }
 }
 
-function launch_training_request(new_class) {
+async function launch_training_request(new_class) {
 
   let image = document.getElementById("image-id");
 
   document.getElementById("result").textContent =
     "Training started with success";
 
-  fetch("/train", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ input_image: image.src, correct_class: new_class }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      console.log(data);
-      document.getElementById("result").textContent = data.message;
-    })
-    .catch((error) => {
-      document.getElementById("result").textContent = "Error: " + error;
-    });
+  await train(image.src,new_class);
+
+  // fetch("/train", {
+  //   method: "POST",
+  //   headers: {
+  //     "Content-Type": "application/json",
+  //   },
+  //   body: JSON.stringify({ input_image: image.src, correct_class: new_class }),
+  // })
+  //   .then((response) => response.json())
+  //   .then((data) => {
+  //     console.log(data);
+  //     document.getElementById("result").textContent = data.message;
+  //   })
+  //   .catch((error) => {
+  //     document.getElementById("result").textContent = "Error: " + error;
+  //   });
 }

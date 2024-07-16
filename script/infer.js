@@ -1,6 +1,6 @@
 import * as ort from "/dist/ort.training.wasm.min.js";
 
-async function loadJSON(url) {
+export async function loadJSON(url) {
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -20,7 +20,8 @@ async function loadInferenceSession() {
   try {
     const session = await ort.InferenceSession.create(MODEL_PATH);
     console.log("Inference Session successfully loaded");
-    return session;
+    console.log(session)
+;    return session;
   } catch (err) {
     console.log("Error loading the Inference Session:", err);
     throw err;
@@ -121,7 +122,7 @@ export async function predict(base64Data) {
 
   // Preprocess the input_image
   let image = await preprocessImage(base64Data);
-
+    console.log(image);
   // Prepare the input of the session
   let feeds = {
     pixel_values: image,
