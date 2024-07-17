@@ -1,15 +1,15 @@
 import * as ort from "/dist/ort.training.wasm.min.js";
-import { preprocessImage, loadJSON } from "./infer.js";
+import { preprocessImage, loadJSON, toTensorAndResize } from "./infer.js";
 
-console.log(tf);
-
+// Set up wasm paths 
 ort.env.wasm.wasmPaths = "/dist/";
+ort.env.wasm.numThreads = 1;
 
-console.log(ort);
-
-var config = await loadJSON("/script/config.json");
-var pre = await loadJSON("/script/preprocessor_config.json");
-var numEpochs = 2;
+// Load configuration files
+const config = await loadJSON("/script/config.json");
+const pre = await loadJSON("/script/preprocessor_config.json");
+const numEpochs = 2;
+let trainingSession = null;
 
 async function loadTrainingSession() {
   console.log("Trying to load Training Session");
@@ -27,12 +27,10 @@ async function loadTrainingSession() {
       optimizerModel: optimizer,
     };
 
-    const session = await ort.TrainingSession.create(createOptions);
+    trainingSession = await ort.TrainingSession.create(createOptions);
     console.log("Training session loaded");
-    console.log(session);
-    return session;
   } catch (err) {
-    console.log("Error loading the training session:", err);
+    console.error("Error loading the training session:", err);
     throw err;
   }
 }
@@ -46,70 +44,74 @@ function createTargetTensor(new_class) {
   let data = new Float32Array(size).fill(low_value);
   data[index] = -low_value;
 
-  const target_tensor = new ort.Tensor("float32", data, shape);
+  return new ort.Tensor("float32", data, shape);
+}
 
-  return target_tensor;
+function augmentImage(imageTensor) {
+  // Add a batch dimension, imageTensor shape is: [224, 224, 3]
+  let augmentedImage = tf.expandDims(imageTensor, 0);
+  
+  // augmentedImage shape is: [1, 224, 224, 3]
+  // Random horizontal flip
+  if (Math.random() > 0.5) {
+    augmentedImage = tf.image.flipLeftRight(augmentedImage);
+  }
+
+
+  // Random rotation (0, 90, 180, 270 degrees)
+  const rotations = [0, 90, 180, 270];
+  const angle = rotations[Math.floor(Math.random() * rotations.length)];
+  augmentedImage = tf.image.rotateWithOffset(augmentedImage, angle / 90);
+
+  return augmentedImage; // shape: [1, 224, 224, 3]
 }
 
 async function preprocessImageTraining(base64Data, pre) {
   const numImages = 10;
   const images = [];
-  const inputSize = { width: pre.size.width, height: pre.size.height };
+  const inputSize = {
+    width: pre.size.width,
+    height: pre.size.height,
+  };
 
-  // Assuming preprocessImage(base64Data) gives you an ort.Tensor with shape [1, 3, 224, 224]
-  // Let's create a tensor from this data for augmentation
-  let image = await preprocessImage(base64Data);
+  // Preprocess the image, image shape is [1, 3, 224, 224]
+  let image = await toTensorAndResize(base64Data);
 
-  const imageData = await image.getData();
-  console.log(imageData);
+  // Get the pixel values of the image
+  const imageData_ = await image.getData();
 
   for (let i = 0; i < numImages; i++) {
-    // Clone the original tensor for augmentation
-    let imageTensor = tf.tensor(imageData, [1,3,224,224]);
-    console.log(imageTensor);
-    // Perform random transformations
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = inputSize.width;
-    canvas.height = inputSize.height;
+    // Clone the original tensor for augmentation, imageTensor shape is [3, 224, 224]
+    let imageTensor = tf.tensor(imageData_, [3, 224, 224], "float32");
 
-    // Convert tensor to canvas to manipulate
-    const pixels = await tf.browser.toPixels(imageTensor);
-    console.log(pixels);
-    ctx.putImageData(pixels, 0, 0);
+    // Transpose image tensor to [224, 224, 3] for augmentation
+    imageTensor = tf.transpose(imageTensor, [1, 2, 0]);
 
-    // Random transformations
-    if (Math.random() > 0.5) ctx.scale(-1, 1); // Random horizontal flip
-    if (Math.random() > 0.5) ctx.scale(1, -1); // Random vertical flip
+    // Apply augmentations, shape is [1, 224, 224, 3]
+    let augmentedTensor = augmentImage(imageTensor);
 
-    // Random rotation
-    const rotations = [0, 90, 180, 270];
-    const angle = rotations[Math.floor(Math.random() * rotations.length)];
-    ctx.rotate((angle * Math.PI) / 180);
+    // Transpose image tensor back to [3, 224, 224]
+    augmentedTensor = tf.transpose(augmentedTensor, [0, 3, 1, 2]);
 
-    // Convert canvas back to tensor
-    imageTensor = tf.browser.fromPixelsAsync(canvas);
+    let data_ = await augmentedTensor.data();
+    let shape = augmentedTensor.shape;
 
-    // Transpose image tensor to [3, 224, 224]
-    imageTensor = tf.transpose(imageTensor, [2, 0, 1]);
-    imageTensor = tf.expandDims(imageTensor, 0);
+    augmentedTensor = new ort.Tensor("float32", data_, shape);
 
-    // Collect the image tensor
-    images.push(imageTensor);
+    augmentedTensor = await preprocessImage(augmentedTensor);
+
+    // Collect the augmented tensor
+    images.push(augmentedTensor);
   }
 
   return images;
 }
 
 async function runTrainingEpoch(session, images, epoch, target_tensor) {
-  let batchNum = 0;
-  const epochStartTime = 0;
-  // Obtain loss node name from session
+  const epochStartTime = Date.now();
   const lossNodeName = session.trainingOutputNames[0];
 
-  console.log(
-    `TRAINING | Epoch ${epoch + 1} / ${numEpochs} | Starting Training ... `
-  );
+  console.log(`TRAINING | Epoch ${epoch + 1} / ${numEpochs} | Starting Training ... `);
 
   for (let image of images) {
     // create input
@@ -127,40 +129,37 @@ async function runTrainingEpoch(session, images, epoch, target_tensor) {
     await session.lazyResetGrad();
   }
 
-  const buffer = session.getContiguousParameters();
-  console.log("CONTIGUOUS PARAMETERS", buffer);
+  const epochTime = Date.now() - epochStartTime;
+  console.log(`Epoch ${epoch + 1} completed in ${epochTime} milliseconds.`);
 }
 
 export async function train(base64Data, new_class) {
   try {
     // Load Training Session
-    const session = await loadTrainingSession();
-    console.log("Training session loaded");
-
-    // Preprocess input image
+    if (!trainingSession) {
+      console.log("Training session not loaded yet, waiting...");
+      await loadTrainingSession();
+    }
+    
+    // Preprocess input image - perform data augmentation
     let images = await preprocessImageTraining(base64Data, pre);
-    console.log(images);
-    console.log(images.shape);
+
     // Create target tensor
     const target_tensor = createTargetTensor(new_class);
 
     const startTrainingTime = Date.now();
-    let accumulatedLoss = 0;
-    let testAcc = 0;
-
     console.log("Training started");
+
     // Run training loop
     for (let epoch = 0; epoch < numEpochs; epoch++) {
-      await runTrainingEpoch(session, images, epoch, target_tensor);
-      // testAcc = await runTestingEpoch(session,images,epoch);
-
-      //const loss = results[lossNodeName].data;
-      //// Accumulate loss for evaluation purposes (if needed)
-      //accumulatedLoss += parseFloat(loss);
+      await runTrainingEpoch(trainingSession, images, epoch, target_tensor);
     }
 
-    const trainingTime = Math.abs(startTrainingTime - Date.now());
+    const trainingTime = Date.now() - startTrainingTime;
     console.log(`Training completed in ${trainingTime} milliseconds.`);
+
+    await trainingSession.release();
+
   } catch (err) {
     console.error("Error during training:", err);
     throw err; // Propagate the error for higher-level handling
