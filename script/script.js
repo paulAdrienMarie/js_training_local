@@ -134,4 +134,7 @@ async function launch_training(new_class) {
 
   await train(image.src,new_class);
 
+  document.getElementById("result").textContent =
+    "Training finished successfully";
+
 }

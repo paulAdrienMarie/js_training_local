@@ -7,7 +7,7 @@ ort.env.wasm.numThreads = 1;
 let trainingSession = null;
 let images = null;
 let target_tensor = null;
-const numEpochs = 2;
+const numEpochs = 1;
 
 async function loadTrainingSession() {
   console.log("Trying to load Training Session");
@@ -26,7 +26,7 @@ async function loadTrainingSession() {
 
   try {
     trainingSession = await ort.TrainingSession.create(createOptions);
-    console.log("Training session loaded", trainingSession);
+    console.log("Training session loaded");
   } catch (err) {
     console.error("Error loading the training session:", err);
     throw err;
@@ -63,7 +63,6 @@ async function runTrainingEpoch(images, epoch, target_tensor) {
 
 // Worker code for message handling
 self.addEventListener("message", async (event) => {
-  console.log("Message received in worker:", event.data);
 
   let data = event.data;
 
@@ -83,7 +82,6 @@ self.addEventListener("message", async (event) => {
   }
 
   const trainingTime = Date.now() - startTrainingTime;
-  console.log(`Training completed in ${trainingTime} milliseconds.`);
 
   self.postMessage({ status: "Training completed", trainingTime });
 

@@ -222,10 +222,8 @@ export async function train(base64Data, new_class) {
     var trainingWorker = new Worker("/script/training-worker.js",{type:"module"});
 
     trainingWorker.onmessage = function (message) {
-      console.log(message);
+      console.log(message.data.status, "in", message.data.trainingTime.toString(), "ms");
     };
-
-    console.log(trainingWorker);
 
     let images = await preprocessImageTraining(base64Data, pre);
 
@@ -246,8 +244,6 @@ export async function train(base64Data, new_class) {
       images: serializedImages,
       target_tensor: serializedTarget,
     };
-
-    console.log("DATA", data);
 
     trainingWorker.postMessage(data);
   } catch (err) {
