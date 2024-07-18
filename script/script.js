@@ -1,10 +1,7 @@
-import { train } from "./training.js";
-import { predict } from "./infer.js";
+import { predict, train } from "./App.js";
 
-const status = document.getElementById("status");
 const fileUpload = document.getElementById("file-upload");
 const imageContainer = document.getElementById("image-container");
-const input_size = 224;
 
 // read the uploaded file
 fileUpload.addEventListener("change", function (e) {
@@ -31,7 +28,6 @@ fileUpload.addEventListener("change", function (e) {
 
 // make a request to the python server to generate a caption of the given image
 async function detect(image) {
-  
   const labels = await predict(image.src);
 
   displayOutput(labels);
@@ -104,7 +100,6 @@ function displayButtons() {
 function add_Event(id) {
   if (id === "button-retrain-id") {
     document.getElementById(id).addEventListener("click", function () {
-      
       const checkedCheckbox = document.querySelector(
         "#labels-container input[type='checkbox']:checked"
       );
@@ -115,7 +110,7 @@ function add_Event(id) {
         );
         const labelText = labelElement.innerText.split(":")[0]; // Extract label text before the col
         // Launch the training request with the label of the checked checkbox
-        launch_training_request(labelText);
+        launch_training(labelText);
       } else {
         alert("Please select a label before launching the training.");
       }
@@ -131,8 +126,7 @@ function add_Event(id) {
   }
 }
 
-async function launch_training_request(new_class) {
-
+async function launch_training(new_class) {
   let image = document.getElementById("image-id");
 
   document.getElementById("result").textContent =
