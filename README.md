@@ -4,7 +4,7 @@
 
 Create a Python virtual env : `python3 -m venv env`.
 
-Activate it : `source env/bin/activate.
+Activate it : `source env/bin/activate`.
 
 And install the required packages `pip install -r requirements.txt`
 
