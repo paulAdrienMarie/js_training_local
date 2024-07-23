@@ -14,12 +14,12 @@
             <img class="upload-icon" src="https://huggingface.co/datasets/Xenova/transformers.js-docs/resolve/main/upload-icon.png" />
             Upload image
         </label>
-        <div id="image-container"></div>
-        <p id="status"></p>
-        <p id="result"></p>
+        <div class="output_container" id="output_container">
+            <div id="image-container" class="column" hidden></div>
+            <div id="predictions" class="column" hidden></div>
+        </div>
+        <div id="console" class="column" hidden></div>
     </main>
-    <!-- <script scr="/script/infer.js" type="module"></script>
-    <script src="/script/training.js" type="module"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js" type="module"></script>
     <script src="/script/App.js" type="module"></script>
     <script src="/script/script.js" type="module"></script>

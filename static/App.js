@@ -5,7 +5,9 @@ ort.env.wasm.numThreads = 1;
 
 let inferenceSession = null;
 
-let trainingWorker = new Worker("/script/training-worker.js",{type:"module"});
+let trainingWorker = new Worker("/script/training-worker.js", {
+  type: "module",
+});
 
 async function loadInferenceSession() {
   let MODEL_PATH = "/model/inference.onnx";
@@ -88,7 +90,6 @@ async function toTensorAndResize(base64Data) {
 }
 
 async function preprocessImage(tensor) {
-
   const imageMean = pre.image_mean;
   const imageStd = pre.image_std;
 
@@ -132,7 +133,7 @@ function argsort(array) {
 function createTargetTensor(new_class) {
   const index = config.label2id[new_class];
   const shape = [1, 1000];
-  const low_value = -5;
+  const low_value = -3.5;
 
   const size = shape.reduce((a, b) => a * b);
   let data = new Float32Array(size).fill(low_value);
@@ -210,22 +211,43 @@ export async function predict(base64Data) {
   const id2label = config.id2label;
 
   let labels = {};
-  sorted_indices.slice(0, 5).forEach((i, x) => {
+  sorted_indices.slice(0, 7).forEach((i, x) => {
     labels[id2label[i.toString()]] = probs[i];
   });
 
   return labels;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function train(base64Data, new_class) {
   try {
-    trainingWorker.onmessage = function (message) {
-      console.log(message.data.status, "in", message.data.trainingTime.toString(), "ms");
+    let i = 0;
+    const console = document.getElementById("console");
+    console.hidden = false;
+    trainingWorker.onmessage = async function (message) {
+      let text_area = document.createElement("p");
+
+      if (message.data.loss) {
+        text_area.innerHTML = `<strong>LOSS:</strong> ${message.data.loss.toString()}`;
+      } else {
+        text_area.innerHTML = `<strong>${message.data.epochMessage.toString()}</strong>`;
+        if (message.data.reload == true) {
+          await sleep(2000);
+          location.reload();
+        }
+      }
+
+      text_area.id = `output_${i}`;
+      console.appendChild(text_area);
+      i++;
     };
 
     let images = await preprocessImageTraining(base64Data, pre);
 
-    let serializedImages = images.map(img => ({
+    let serializedImages = images.map((img) => ({
       data: Array.from(img.data),
       dims: img.dims,
       type: img.type,

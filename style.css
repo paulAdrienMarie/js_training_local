@@ -1,5 +1,8 @@
 html, body {
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .container {
@@ -17,7 +20,6 @@ html, body {
   gap: 10px;
   border: 2px solid black;
   padding: 8px 16px;
-  cursor: pointer;
   border-radius: 6px;
   margin-bottom: 30px;
 }
@@ -30,31 +32,62 @@ html, body {
   width: 30px;
 }
 
-#content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+#console {
+  border: 2px solid black;
+  padding: 10px;
+  text-align: center;
+  width: 100%;
   margin-top: 20px;
-  width: 100%;
 }
 
-#image-container {
-  flex: 1;
-  display: flex;
+.check_button {
+  appearance: none;
+  background-color: #2ea44f;
+  border: 1px solid rgba(27, 31, 35, .15);
+  border-radius: 6px;
+  box-shadow: rgba(27, 31, 35, .1) 0 1px 0;
+  box-sizing: border-box;
+  color: #fff;
+  cursor: pointer;
+  display: inline-block;
+  font-family: -apple-system, system-ui, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  padding: 6px 16px;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
-#image-container > img {
-  width: 100%;
-  max-width: 50%;
+.check_button:focus:not(:focus-visible):not(.focus-visible) {
+  box-shadow: none;
+  outline: none;
 }
 
-#labels-container {
-  flex: 1;
+.check_button:hover {
+  background-color: #2c974b;
 }
 
-#textarea-id {
-  text-align: left;
-  margin-left : 50px;
+.check_button:focus {
+  box-shadow: rgba(46, 164, 79, .4) 0 0 0 3px;
+  outline: none;
+}
+
+.check_button:disabled {
+  background-color: #94d3a2;
+  border-color: rgba(27, 31, 35, .1);
+  color: rgba(255, 255, 255, .8);
+  cursor: default;
+}
+
+.check_button:active {
+  box-shadow: rgba(20, 70, 32, .2) 0 1px 0 inset;
 }
 
 #button-retrain-id {
@@ -65,85 +98,28 @@ html, body {
   background-color: #298e46;
 }
 
-.bounding-box {
-  position: absolute;
-  box-sizing: border-box;
-  border-width: 2px;
-  border-style: solid;
-}
-
-.bounding-box-label {
-  color: white;
-  position: absolute;
-  font-size: 12px;
-  margin-top: -16px;
-  margin-left: -2px;
-  padding: 1px;
-}
-
-/* CSS */
-.check_button {
-appearance: none;
-background-color: #2ea44f;
-border: 1px solid rgba(27, 31, 35, .15);
-border-radius: 6px;
-box-shadow: rgba(27, 31, 35, .1) 0 1px 0;
-box-sizing: border-box;
-color: #fff;
-cursor: pointer;
-display: inline-block;
-font-family: -apple-system,system-ui,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
-font-size: 14px;
-font-weight: 600;
-line-height: 20px;
-padding: 6px 16px;
-position: relative;
-text-align: center;
-text-decoration: none;
-user-select: none;
--webkit-user-select: none;
-touch-action: manipulation;
-vertical-align: middle;
-white-space: nowrap;
-}
-
-.check_button:focus:not(:focus-visible):not(.focus-visible) {
-box-shadow: none;
-outline: none;
-}
-
-.check_button:hover {
-background-color: #2c974b;
-}
-
-.check_button:focus {
-box-shadow: rgba(46, 164, 79, .4) 0 0 0 3px;
-outline: none;
-}
-
-.check_button:disabled {
-background-color: #94d3a2;
-border-color: rgba(27, 31, 35, .1);
-color: rgba(255, 255, 255, .8);
-cursor: default;
-}
-
-.check_button:active {
-background-color: #298e46;
-box-shadow: rgba(20, 70, 32, .2) 0 1px 0 inset;
-}
-
-/* Add some space between the checkbox containers */
 .checkbox-container {
-  margin-bottom: 10px; /* Adjust the value to increase or decrease space */
+  margin-bottom: 10px;
 }
 
-/* Style for the generated text container */
 #textarea-id {
   margin-top: 20px;
 }
 
-/* Bold class styling */
 .bold {
   font-weight: bold;
+}
+
+.output_container {
+  display: flex;
+  width: 100%;
+  gap: 10px; /* Add gap between columns */
+}
+
+.column {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #000;
+  text-align: center;
+  box-sizing: border-box;
 }

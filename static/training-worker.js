@@ -10,7 +10,6 @@ let target_tensor = null;
 let numEpochs = 2;
 let num_training = 0;
 
-
 async function loadTrainingSession() {
   console.log("Trying to load Training Session");
 
@@ -53,6 +52,9 @@ async function runTrainingEpoch(images, epoch, target_tensor) {
     const results = await trainingSession.runTrainStep(feeds);
 
     const loss = results[lossNodeName].data;
+    self.postMessage({
+      loss: loss
+    });
     console.log(`LOSS: ${loss}`);
 
     await trainingSession.runOptimizerStep();
@@ -60,6 +62,11 @@ async function runTrainingEpoch(images, epoch, target_tensor) {
   }
 
   const epochTime = Date.now() - epochStartTime;
+
+  self.postMessage({
+    epochMessage : `Epoch ${epoch + 1} completed in ${epochTime} milliseconds.`
+  });
+
   console.log(`Epoch ${epoch + 1} completed in ${epochTime} milliseconds.`);
 }
 
@@ -108,21 +115,23 @@ self.addEventListener("message", async (event) => {
 
   const trainingTime = Date.now() - startTrainingTime;
 
-  self.postMessage({ status: "Training completed", trainingTime : trainingTime });
+  self.postMessage({
+    status: "Training completed",
+    trainingTime: trainingTime,
+  });
 
-  console.log(images);
+  // console.log(images);
 
   const feeds_ = {
     pixel_values: images[0],
-    target: target_tensor
-  }
+    target: target_tensor,
+  };
 
   let result = await trainingSession.runEvalStep(feeds_);
 
   let params = await trainingSession.getContiguousParameters(true);
 
   let parameters = await paramsToUint8Buffer(params.cpuData);
-
 
   try {
     await trainingSession.loadParametersBuffer(parameters, true);
@@ -134,33 +143,37 @@ self.addEventListener("message", async (event) => {
   const params_size_true = await trainingSession.getParametersSize(true);
   const params_size_false = await trainingSession.getParametersSize(false);
 
-  console.log("PARAMS BEFORE", params_before);
-  console.log("PARAMS AFTER", params);
-  console.log("PARAMS SIZE TRUE", params_size_true);
-  console.log("PARAMS SIZE FALSE", params_size_false);
-  console.log("RESULTS RUN EVAL STEP", result);
+  // console.log("PARAMS BEFORE", params_before);
+  // console.log("PARAMS AFTER", params);
+  // console.log("PARAMS SIZE TRUE", params_size_true);
+  // console.log("PARAMS SIZE FALSE", params_size_false);
+  // console.log("RESULTS RUN EVAL STEP", result);
 
   await trainingSession.release();
 
+  // console.log("PARAMS LENGTH", params.length);
 
-  console.log("PARAMS LENGTH", params.length);
+  self.postMessage({
+    epochMessage: "Model parameters updated",
+    reload: true
+  })
 
   if (num_training) {
     fetch("/update_model", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({updated_weights: params}) 
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ updated_weights: params }),
     })
-        .then((response) => response.json())
-        .then((data) => {
-            console.log(data);
-            console.log("MODEL HAS BEEN UPDATED");
-        })
-        .catch((error) => {
-            console.log("Error:", error);
-        })
+      .then((response) => response.json())
+      .then((data) => {
+        // console.log(data);
+        console.log("Model parameters updated");
+      })
+      .catch((error) => {
+        console.log("Error:", error);
+      });
   }
 });
 

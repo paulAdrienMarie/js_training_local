@@ -2,6 +2,10 @@ import { predict, train } from "./App.js";
 
 const fileUpload = document.getElementById("file-upload");
 const imageContainer = document.getElementById("image-container");
+const predictions = document.getElementById("predictions");
+const output_container = document.getElementById("output_container");
+const console = document.getElementById("console");
+
 
 // read the uploaded file
 fileUpload.addEventListener("change", function (e) {
@@ -18,6 +22,7 @@ fileUpload.addEventListener("change", function (e) {
     const image = document.createElement("img");
     image.src = e2.target.result;
     image.id = "image-id";
+    imageContainer.hidden = false;
     imageContainer.appendChild(image);
     image.onload = function () {
       detect(image);
@@ -35,9 +40,7 @@ async function detect(image) {
 
 function displayOutput(data) {
   const labels = data;
-
-  const generated_text = document.createElement("div");
-  generated_text.id = "textarea-id";
+  predictions.hidden = false;
 
   // Create a container for the labels
   const labelsContainer = document.createElement("div");
@@ -67,21 +70,16 @@ function displayOutput(data) {
   }
 
   // Append the labels container to the generated text div
-  generated_text.appendChild(labelsContainer);
-
-  // Append the generated text to the image container
-  const imageContainer = document.getElementById("image-container");
-  imageContainer.appendChild(generated_text);
+  predictions.appendChild(labelsContainer);
 
   // Call the displayButtons function (assuming it exists)
   displayButtons();
 }
 
 function displayButtons() {
-  const textarea = document.getElementById("textarea-id");
   let buttons = document.createElement("div");
   buttons.id = "buttons-id";
-  textarea.appendChild(buttons);
+  predictions.appendChild(buttons);
   let button_validate = document.createElement("button");
   button_validate.className = "check_button";
   button_validate.id = "button-validate-id";
@@ -101,7 +99,7 @@ function add_Event(id) {
   if (id === "button-retrain-id") {
     document.getElementById(id).addEventListener("click", function () {
       const checkedCheckbox = document.querySelector(
-        "#labels-container input[type='checkbox']:checked"
+        "#predictions input[type='checkbox']:checked"
       );
       if (checkedCheckbox) {
         // Get the label associated with the checked checkbox
@@ -119,9 +117,11 @@ function add_Event(id) {
     document.getElementById(id).addEventListener("click", function () {
       const image = document.getElementById("image-id");
       imageContainer.removeChild(image);
-      const textarea = document.getElementById("textarea-id");
-      imageContainer.removeChild(textarea);
-      document.getElementById("result").textContent = "";
+      predictions.innerHTML = "";
+      console.innerHTML = "";
+      predictions.hidden = true;
+      console.hidden = true;
+      imageContainer.hidden = true;
     });
   }
 }
@@ -129,12 +129,5 @@ function add_Event(id) {
 async function launch_training(new_class) {
   let image = document.getElementById("image-id");
 
-  document.getElementById("result").textContent =
-    "Training started with success";
-
-  await train(image.src,new_class);
-
-  document.getElementById("result").textContent =
-    "Training finished successfully";
-
+  await train(image.src, new_class);
 }
