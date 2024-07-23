@@ -3,6 +3,7 @@ import os
 import onnx
 import numpy as np
 from onnx import numpy_helper
+from artifacts import generate_artifatcs
 # import pdb
 
 HERE = os.path.dirname(__file__)
@@ -39,7 +40,10 @@ async def update_model(request):
             
         onnx.save_model(model, MODEL_PATH)
         
-        data = {"message": "MODEL UPDATED"}
+        data = {"message": "MODEL AND TRAINING ARTIFACTS UPDATED"}
+        
+        generate_artifatcs()
+        
         return web.json_response(data)
     
     except Exception as e:
