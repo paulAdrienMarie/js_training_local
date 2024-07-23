@@ -1,17 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
     <title>Training App</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Training App</h1>
     <main class="container">
         <label class="custom-file-upload">
             <input id="file-upload" type="file" accept="image/*" />
-            <img class="upload-icon" src="https://huggingface.co/datasets/Xenova/transformers.js-docs/resolve/main/upload-icon.png" />
+            <img class="upload-icon" src="/script/upload-icon.png" />
             Upload image
         </label>
         <div class="output_container" id="output_container">
@@ -19,9 +19,11 @@
             <div id="predictions" class="column" hidden></div>
         </div>
         <div id="console" class="column" hidden></div>
-    </main>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js" type="module"></script>
+        <script
+      src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"
+      type="module"
+    ></script>
     <script src="/script/App.js" type="module"></script>
     <script src="/script/script.js" type="module"></script>
-</body>
+  </body>
 </html>
