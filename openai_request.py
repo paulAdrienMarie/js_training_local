@@ -7,18 +7,9 @@ import time
 import json
 
 api_key = os.environ["OPENAI_API_KEY"]
+
 client = OpenAI(api_key=api_key)
 HERE = os.path.dirname(__file__)
-
-file_name = "./config.json"
-
-if not os.path.exists(file_name):
-    with open(file_name, "w") as file:
-        pass
-    print(f"Le fichier '{file_name}' a été créé avec succès.")
-else:
-    print(f"Le fichier '{file_name}' existe déjà.")
-
 
 BATCH_SIZE = 5
 PROMPT = f"""\
@@ -42,14 +33,17 @@ class OpenAICache:
         # Check if cache file exists
         with open(self.CACHE_DIR) as f:
             cache = json.load(f)
-        
-        ids = cache[0]
+        if not cache:
+            ids = []
+        else:
+            ids = cache.keys()
         
         return id in ids
     
     def cache_generation(self, ids, responses):
         
         cache = {}
+        
         if os.path.exists(self.CACHE_DIR):
             with open(self.CACHE_DIR) as f:
                 cache = json.load(f)
@@ -66,7 +60,8 @@ class AltGenerator:
         self.args = args,
         self.cache = OpenAICache()
         
-    def load_from_path():
+    def load_from_path(self):
+        
         IMAGES_DIR = "./dest/"
         images = {}
         
@@ -75,7 +70,7 @@ class AltGenerator:
             file_path = os.path.join(IMAGES_DIR,file_name)
             
             if not (os.path.splitext(file_path)[1] == ".png"):
-                break
+                pass
             else:
                 key = os.path.splitext(file_path)[0]
                 images[key] = Image.open(file_path).convert("RGB")
@@ -137,21 +132,23 @@ class AltGenerator:
     def __call__(self):
         
         images = self.load_from_path()
+        print("IMAGES LENGTH {}".format(len(images)))
         
         dict_items_list = list(images.items())
-   
+        j = 0
         for i in range(0, len(dict_items_list), BATCH_SIZE):
             chunk = dict_items_list[i:i + BATCH_SIZE]
             image_slice = dict(chunk)
-        
+            print(len(image_slice))
             uncached_ids = [id for id in image_slice.keys() if not self.cache.is_cached(id)]
             if not uncached_ids:
                 continue
-
+            
             uncached_images = [image_slice[id] for id in uncached_ids]
-
+            print("MAKING REQUEST FOR BATCH {}".format(j))
             generation = self.generate(uncached_images, uncached_ids)
-            self.cache.cache_generation(uncached_ids, list(generation.values()))
+            self.cache.cache_generation(uncached_ids, generation[0]["result"])
+            j += 1
             
         print("Dataset saved to dataset.json")
         
