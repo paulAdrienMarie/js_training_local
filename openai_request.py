@@ -10,6 +10,16 @@ api_key = os.environ["OPENAI_API_KEY"]
 client = OpenAI(api_key=api_key)
 HERE = os.path.dirname(__file__)
 
+file_name = "./config.json"
+
+if not os.path.exists(file_name):
+    with open(file_name, "w") as file:
+        pass
+    print(f"Le fichier '{file_name}' a été créé avec succès.")
+else:
+    print(f"Le fichier '{file_name}' existe déjà.")
+
+
 BATCH_SIZE = 5
 PROMPT = f"""\
 Look at the {BATCH_SIZE} images and predict the class that best describes the images for each provided image.
@@ -27,9 +37,6 @@ class OpenAICache:
         
     def is_cached(self, id):
         # Check if cache file exists
-        if not os.path.exists(self.CACHE_DIR):
-            return False
-        
         with open(self.CACHE_DIR) as f:
             cache = json.load(f)
         
