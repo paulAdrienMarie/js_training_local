@@ -34,6 +34,9 @@ Return the result in a result key that is a list"""
 class OpenAICache:
     def __init__(self):
         self.CACHE_DIR = "./cache.json"
+        if not os.path.exists(self.CACHE_DIR):
+            with open(self.CACHE_DIR, "w") as f:
+                json.dump({}, f)
         
     def is_cached(self, id):
         # Check if cache file exists
@@ -141,13 +144,14 @@ class AltGenerator:
             chunk = dict_items_list[i:i + BATCH_SIZE]
             image_slice = dict(chunk)
         
-            for id in image_slice.keys() :
-                if not self.cache.is_cached(id):
-                    del image_slice[id]
+            uncached_ids = [id for id in image_slice.keys() if not self.cache.is_cached(id)]
+            if not uncached_ids:
+                continue
 
-                generation = self.generate(list(image_slice.values()), list(image_slice.keys()))
+            uncached_images = [image_slice[id] for id in uncached_ids]
 
-                self.cache.cache_generation(list(generation.keys()),list(generation.values()))
+            generation = self.generate(uncached_images, uncached_ids)
+            self.cache.cache_generation(uncached_ids, list(generation.values()))
             
         print("Dataset saved to dataset.json")
         
