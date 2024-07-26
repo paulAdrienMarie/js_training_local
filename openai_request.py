@@ -5,6 +5,7 @@ from openai import OpenAI
 from io import BytesIO
 import time
 import json
+from utils import filter
 
 api_key = os.environ["OPENAI_API_KEY"]
 
@@ -157,3 +158,4 @@ if __name__ == "__main__":
     args = "Image classification using gpt-4o"
     obj = AltGenerator(args=args)
     obj()
+    filter()
